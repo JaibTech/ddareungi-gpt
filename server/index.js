@@ -69,10 +69,11 @@ app.post("/recommend", async (req, res) => {
       stations: response,
     });
   } catch (err) {
-    console.error(err);
+    console.error("RECOMMEND ERROR:", err);
 
     return res.status(500).json({
       error: "Server error",
+      message: err.message,
     });
   }
 });
