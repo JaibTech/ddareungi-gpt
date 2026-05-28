@@ -4,36 +4,33 @@ import { getRecommendations } from "../api/bikeApi";
 
 export default function Home() {
   const [stations, setStations] = useState<any[]>([]);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
-  const [userLocation, setUserLocation] =
-    useState<{
-      lat: number;
-      lng: number;
-    } | null>(null);
-
-  const [selectedStation, setSelectedStation] =
-    useState<any>(null);
+  const [selectedStation, setSelectedStation] = useState<any>(null);
 
   useEffect(() => {
-    const params = new URLSearchParams(
-      window.location.search
-    );
+    const params = new URLSearchParams(window.location.search);
 
     const lat = params.get("lat");
     const lng = params.get("lng");
 
+    // 지도 링크로 들어온 경우: GPS 실행하지 않음
     if (lat && lng) {
-      const target = {
-        lat: Number(lat),
-        lng: Number(lng),
-      };
+      const targetLat = Number(lat);
+      const targetLng = Number(lng);
 
-      setUserLocation(target);
+      setUserLocation({
+        lat: targetLat,
+        lng: targetLng,
+      });
 
       setSelectedStation({
         name: "선택한 따릉이",
-        lat: target.lat,
-        lon: target.lng,
+        lat: targetLat,
+        lon: targetLng,
         bikeCount: 0,
         distance: 0,
       });
@@ -41,28 +38,27 @@ export default function Home() {
       return;
     }
 
+    // 일반 접속일 때만 GPS 실행
     if (!navigator.geolocation) return;
 
-    const watchId =
-      navigator.geolocation.watchPosition(
-        (pos) => {
-          setUserLocation({
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-          });
-        },
-        (err) => {
-          console.error(err);
-        },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 1000,
-          timeout: 5000,
-        }
-      );
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      (err) => {
+        console.error(err);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 1000,
+        timeout: 5000,
+      }
+    );
 
-    return () =>
-      navigator.geolocation.clearWatch(watchId);
+    return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
   async function load() {
@@ -74,9 +70,7 @@ export default function Home() {
       []
     );
 
-    const result = res.stations ?? res;
-
-    setStations(result);
+    setStations(res.stations ?? res);
   }
 
   useEffect(() => {
