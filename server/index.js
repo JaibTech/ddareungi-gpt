@@ -24,14 +24,32 @@ app.get("/health", (req, res) => {
 
 const SEOUL_API_KEY = process.env.SEOUL_BIKE_API_KEY;
 
+
 async function getBikeData() {
+  if (!SEOUL_API_KEY) {
+    throw new Error("SEOUL_BIKE_API_KEY is missing");
+  }
+
   const url = `http://openapi.seoul.go.kr:8088/${SEOUL_API_KEY}/json/bikeList/1/1000/`;
 
   const res = await fetch(url);
-  const data = await res.json();
+  const text = await res.text();
+
+  if (!res.ok) {
+    console.error("SEOUL API HTTP ERROR:", text);
+    throw new Error(`Seoul API HTTP error: ${res.status}`);
+  }
+
+  if (text.trim().startsWith("<")) {
+    console.error("SEOUL API HTML RESPONSE:", text.slice(0, 500));
+    throw new Error("Seoul API returned HTML instead of JSON");
+  }
+
+  const data = JSON.parse(text);
 
   return data?.rentBikeStatus?.row || [];
 }
+
 
 app.post("/recommend", async (req, res) => {
   try {
