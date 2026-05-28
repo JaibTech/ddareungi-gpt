@@ -3,9 +3,7 @@ import BikeMap from "../components/BikeMap";
 import { getRecommendations } from "../api/bikeApi";
 
 export default function Home() {
-  const [stations, setStations] = useState<any[]>(
-    []
-  );
+  const [stations, setStations] = useState<any[]>([]);
 
   const [userLocation, setUserLocation] =
     useState<{
@@ -13,8 +11,36 @@ export default function Home() {
       lng: number;
     } | null>(null);
 
-  // 🚀 GPS 추적 시작
+  const [selectedStation, setSelectedStation] =
+    useState<any>(null);
+
   useEffect(() => {
+    const params = new URLSearchParams(
+      window.location.search
+    );
+
+    const lat = params.get("lat");
+    const lng = params.get("lng");
+
+    if (lat && lng) {
+      const target = {
+        lat: Number(lat),
+        lng: Number(lng),
+      };
+
+      setUserLocation(target);
+
+      setSelectedStation({
+        name: "선택한 따릉이",
+        lat: target.lat,
+        lon: target.lng,
+        bikeCount: 0,
+        distance: 0,
+      });
+
+      return;
+    }
+
     if (!navigator.geolocation) return;
 
     const watchId =
@@ -39,7 +65,6 @@ export default function Home() {
       navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  // 🚲 추천 불러오기
   async function load() {
     if (!userLocation) return;
 
@@ -49,10 +74,11 @@ export default function Home() {
       []
     );
 
-    setStations(res);
+    const result = res.stations ?? res;
+
+    setStations(result);
   }
 
-  // 위치 바뀌면 자동 추천
   useEffect(() => {
     if (userLocation) {
       load();
@@ -66,6 +92,7 @@ export default function Home() {
       <BikeMap
         stations={stations}
         userLocation={userLocation}
+        selectedStation={selectedStation}
       />
     </div>
   );
