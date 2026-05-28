@@ -1,6 +1,21 @@
 import express from "express";
- * 🚲 실시간 따릉이 데이터 가져오기
- */
+import cors from "cors";
+import dotenv from "dotenv";
+
+import {
+  recommendStations,
+  makeExplanation,
+} from "./src/services/bikeRecommender.js";
+
+dotenv.config();
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+const SEOUL_API_KEY = process.env.SEOUL_BIKE_API_KEY;
+
 async function getBikeData() {
   const url = `http://openapi.seoul.go.kr:8088/${SEOUL_API_KEY}/json/bikeList/1/1000/`;
 
@@ -10,70 +25,50 @@ async function getBikeData() {
   return data?.rentBikeStatus?.row || [];
 }
 
-/**
- * 🚲 추천 API
- */
 app.post("/recommend", async (req, res) => {
   try {
-    // GPT Action 요청값
     const { lat, lng } = req.body;
 
-    const userLat = lat;
-    const userLng = lng;
-
-    if (!userLat || !userLng) {
-      return res
-        .status(400)
-        .json({ error: "missing location" });
+    if (!lat || !lng) {
+      return res.status(400).json({
+        error: "missing location",
+      });
     }
 
-    // 1. 따릉이 API 호출
     const rawData = await getBikeData();
 
-    // 2. 데이터 변환
     const stations = rawData.map((item) => ({
       stationName: item.stationName,
       lat: parseFloat(item.stationLatitude),
       lon: parseFloat(item.stationLongitude),
-      parkingBikeTotCnt: parseInt(
-        item.parkingBikeTotCnt
-      ),
+      parkingBikeTotCnt: parseInt(item.parkingBikeTotCnt, 10),
     }));
 
-    // 3. 추천 계산
-    const results = recommendStations(
-      stations,
-      userLat,
-      userLng
-    );
+    const results = recommendStations(stations, lat, lng);
 
-    // 4. GPT 응답 구조
-    const response = results.map((s) => ({
-      name: s.stationName,
-      distance: s.distance,
-      bikeCount: s.parkingBikeTotCnt,
-      score: s.score,
-      reason: makeExplanation(s),
-
-      lat: s.lat,
-      lng: s.lon,
-
-      mapUrl: `https://ddareungi-app.vercel.app/map?lat=${s.lat}&lng=${s.lon}`,
+    const response = results.map((station) => ({
+      name: station.stationName,
+      distance: station.distance,
+      bikeCount: station.parkingBikeTotCnt,
+      score: station.score,
+      reason: makeExplanation(station),
+      lat: station.lat,
+      lng: station.lon,
+      mapUrl: `https://ddareungi-app.vercel.app/map?lat=${station.lat}&lng=${station.lon}`,
     }));
 
-    res.json({
+    return res.json({
       stations: response,
     });
   } catch (err) {
     console.error(err);
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Server error",
     });
   }
 });
 
-// 🚀 Railway / Render 대응
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
