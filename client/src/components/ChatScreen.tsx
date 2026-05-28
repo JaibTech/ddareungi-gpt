@@ -71,16 +71,14 @@ export default function ChatScreen() {
       content: text,
     };
 
-    const updatedMessages = [
+    const updatedMessages: Message[] = [
       ...currentChat.messages,
       userMessage,
     ];
 
     updateMessages(updatedMessages);
 
-    if (
-      currentChat.title === "새 채팅"
-    ) {
+    if (currentChat.title === "새 채팅") {
       setChats((prev) =>
         prev.map((chat) =>
           chat.id === currentChatId
@@ -108,22 +106,19 @@ export default function ChatScreen() {
     ]);
 
     try {
-      await streamMessage(
-        text,
-        (chunk) => {
-          botText += chunk;
+      await streamMessage(text, (chunk) => {
+        botText += chunk;
 
-          const latestMessages = [
-            ...updatedMessages,
-            {
-              role: "assistant",
-              content: botText,
-            },
-          ];
+        const latestMessages: Message[] = [
+          ...updatedMessages,
+          {
+            role: "assistant",
+            content: botText,
+          },
+        ];
 
-          updateMessages(latestMessages);
-        }
-      );
+        updateMessages(latestMessages);
+      });
     } catch (error) {
       console.error(error);
     }
@@ -154,14 +149,12 @@ export default function ChatScreen() {
 
       <div className="flex-1 flex flex-col">
         <div className="flex-1 overflow-y-auto p-5">
-          {currentChat?.messages.map(
-            (msg, idx) => (
-              <MessageBubble
-                key={idx}
-                message={msg}
-              />
-            )
-          )}
+          {currentChat?.messages.map((msg, idx) => (
+            <MessageBubble
+              key={idx}
+              message={msg}
+            />
+          ))}
 
           {loading && (
             <div className="text-gray-400 text-sm">
