@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import {
   recommendStations,
   makeExplanation,
-} from "./src/services/bikeRecommender.js";
+} from "./src/service/bikeRecommender.js";
 
 dotenv.config();
 
