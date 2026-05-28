@@ -1,0 +1,72 @@
+openapi: 3.1.0
+info:
+  title: Ddareungi Recommendation API
+  description: 서울 따릉이 최적 대여소 추천 API
+  version: 1.0.0
+
+servers:
+  - url: https://ddareungi-app.vercel.app/
+
+paths:
+  /recommend:
+    post:
+      operationId: getBikeRecommendation
+      summary: Get nearby bike station recommendations
+      description: 사용자의 위치를 기반으로 가장 적합한 따릉이 대여소를 추천합니다.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - lat
+                - lng
+              properties:
+                lat:
+                  type: number
+                  description: 사용자 위도
+                  example: 37.5665
+                lng:
+                  type: number
+                  description: 사용자 경도
+                  example: 126.9780
+
+      responses:
+        "200":
+          description: 추천 결과 반환
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          example: "강남역"
+                        lat:
+                          type: number
+                          example: 37.498
+                        lng:
+                          type: number
+                          example: 127.027
+                        distance:
+                          type: number
+                          example: 120
+                        bikeCount:
+                          type: integer
+                          example: 8
+                        score:
+                          type: number
+                          example: 92
+                        reason:
+                          type: string
+                          example: "가까움 + 자전거 충분"
+                        mapUrl:
+                          type: string
+                          example: "https://ddareungi-app.vercel.app/map?lat=37.498&lng=127.027"
