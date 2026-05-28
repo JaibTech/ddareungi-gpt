@@ -14,6 +14,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("Ddareungi API is running");
+});
+
+app.get("/health", (req, res) => {
+  res.json({ ok: true });
+});
+
 const SEOUL_API_KEY = process.env.SEOUL_BIKE_API_KEY;
 
 async function getBikeData() {
