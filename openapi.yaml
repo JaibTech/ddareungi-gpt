@@ -5,8 +5,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://ddareungi-app.vercel.app/
-
+  - url: https://ddareungi-gpt-production.up.railway.app
 paths:
   /recommend:
     post:
