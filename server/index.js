@@ -88,7 +88,7 @@ async function searchPlace(place) {
   };
 }
 
-async function buildRecommendations(lat, lng) {
+async function buildRecommendations(lat, lng) {async function buildRecommendations(lat, lng) {
   const rawData = await getBikeData();
 
   const stations = rawData.map((item) => ({
@@ -101,7 +101,7 @@ async function buildRecommendations(lat, lng) {
     ),
   }));
 
-  // GPT 응답에는 기존처럼 1~3위만 표시
+  // GPT 응답에는 기존처럼 TOP 3만 표시
   const topResults = recommendStations(
     stations,
     lat,
@@ -109,12 +109,12 @@ async function buildRecommendations(lat, lng) {
     3
   );
 
-  // 전체 지도에는 1km 이내 최대 10개 표시
+  // 전체 지도에는 TOP 5만 표시
   const mapResults = recommendStations(
     stations,
     lat,
     lng,
-    10
+    5
   );
 
   const topResponse = topResults.map((station) => ({
@@ -130,11 +130,9 @@ async function buildRecommendations(lat, lng) {
     )}`,
   }));
 
+  // 전체 지도용 데이터는 URL 길이를 줄이기 위해 최소 정보만 전달
   const mapResponse = mapResults.map((station) => ({
     name: station.stationName,
-    distance: station.distance,
-    bikeCount: station.parkingBikeTotCnt,
-    score: station.score,
     lat: station.lat,
     lng: station.lon,
   }));
