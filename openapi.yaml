@@ -68,4 +68,4 @@ paths:
                           example: "가까움 + 자전거 충분"
                         mapUrl:
                           type: string
-                          example: "https://ddareungi-app.vercel.app/map?lat=37.498&lng=127.027"
+                          example: "https://ddareungi-app.vercel.app/?lat=37.498&lng=127.027"
