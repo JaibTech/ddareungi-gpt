@@ -23,7 +23,9 @@ app.get("/health", (req, res) => {
 });
 
 const SEOUL_API_KEY = process.env.SEOUL_BIKE_API_KEY;
+const KAKAO_REST_API_KEY = process.env.KAKAO_REST_API_KEY;
 
+const CLIENT_URL = "https://ddareungi-gpt-iod2.vercel.app";
 
 async function getBikeData() {
   if (!SEOUL_API_KEY) {
@@ -50,6 +52,62 @@ async function getBikeData() {
   return data?.rentBikeStatus?.row || [];
 }
 
+async function searchPlace(place) {
+  if (!KAKAO_REST_API_KEY) {
+    throw new Error("KAKAO_REST_API_KEY is missing");
+  }
+
+  const url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(
+    place
+  )}`;
+
+  const res = await fetch(url, {
+    headers: {
+      Authorization: `KakaoAK ${KAKAO_REST_API_KEY}`,
+    },
+  });
+
+  const data = await res.json();
+
+  if (!data.documents || data.documents.length === 0) {
+    throw new Error(`장소를 찾을 수 없습니다: ${place}`);
+  }
+
+  const first = data.documents[0];
+
+  return {
+    placeName: first.place_name,
+    lat: Number(first.y),
+    lng: Number(first.x),
+    address: first.address_name,
+  };
+}
+
+async function buildRecommendations(lat, lng) {
+  const rawData = await getBikeData();
+
+  const stations = rawData.map((item) => ({
+    stationName: item.stationName,
+    lat: parseFloat(item.stationLatitude),
+    lon: parseFloat(item.stationLongitude),
+    parkingBikeTotCnt: parseInt(item.parkingBikeTotCnt, 10),
+  }));
+
+  const results = recommendStations(stations, lat, lng);
+
+  return results.map((station) => ({
+    name: station.stationName,
+    distance: station.distance,
+    bikeCount: station.parkingBikeTotCnt,
+    score: station.score,
+    reason: makeExplanation(station),
+    lat: station.lat,
+    lng: station.lon,
+    mapUrl: `${CLIENT_URL}/?lat=${station.lat}&lng=${station.lon}&name=${encodeURIComponent(
+      station.stationName
+    )}`,
+  }));
+}
 
 app.post("/recommend", async (req, res) => {
   try {
@@ -61,33 +119,47 @@ app.post("/recommend", async (req, res) => {
       });
     }
 
-    const rawData = await getBikeData();
-
-    const stations = rawData.map((item) => ({
-      stationName: item.stationName,
-      lat: parseFloat(item.stationLatitude),
-      lon: parseFloat(item.stationLongitude),
-      parkingBikeTotCnt: parseInt(item.parkingBikeTotCnt, 10),
-    }));
-
-    const results = recommendStations(stations, lat, lng);
-
-    const response = results.map((station) => ({
-      name: station.stationName,
-      distance: station.distance,
-      bikeCount: station.parkingBikeTotCnt,
-      score: station.score,
-      reason: makeExplanation(station),
-      lat: station.lat,
-      lng: station.lon,
-      mapUrl: `https://ddareungi-gpt-iod2.vercel.app/?lat=${station.lat}&lng=${station.lon}`,
-    }));
+    const response = await buildRecommendations(Number(lat), Number(lng));
 
     return res.json({
       stations: response,
     });
   } catch (err) {
     console.error("RECOMMEND ERROR:", err);
+
+    return res.status(500).json({
+      error: "Server error",
+      message: err.message,
+    });
+  }
+});
+
+app.post("/recommendByPlace", async (req, res) => {
+  try {
+    const { place } = req.body;
+
+    if (!place) {
+      return res.status(400).json({
+        error: "missing place",
+      });
+    }
+
+    const location = await searchPlace(place);
+
+    const response = await buildRecommendations(
+      location.lat,
+      location.lng
+    );
+
+    return res.json({
+      place: location.placeName,
+      address: location.address,
+      lat: location.lat,
+      lng: location.lng,
+      stations: response,
+    });
+  } catch (err) {
+    console.error("RECOMMEND BY PLACE ERROR:", err);
 
     return res.status(500).json({
       error: "Server error",

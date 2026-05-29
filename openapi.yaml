@@ -1,4 +1,5 @@
 openapi: 3.1.0
+
 info:
   title: Ddareungi Recommendation API
   description: 서울 따릉이 최적 대여소 추천 API
@@ -6,12 +7,13 @@ info:
 
 servers:
   - url: https://ddareungi-gpt-production.up.railway.app
+
 paths:
   /recommend:
     post:
       operationId: getBikeRecommendation
-      summary: Get nearby bike station recommendations
-      description: 사용자의 위치를 기반으로 가장 적합한 따릉이 대여소를 추천합니다.
+      summary: Get nearby bike station recommendations by coordinates
+      description: 사용자의 위도/경도를 기반으로 가장 적합한 따릉이 대여소를 추천합니다.
 
       requestBody:
         required: true
@@ -30,7 +32,7 @@ paths:
                 lng:
                   type: number
                   description: 사용자 경도
-                  example: 126.9780
+                  example: 126.978
 
       responses:
         "200":
@@ -38,34 +40,82 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  stations:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                          example: "강남역"
-                        lat:
-                          type: number
-                          example: 37.498
-                        lng:
-                          type: number
-                          example: 127.027
-                        distance:
-                          type: number
-                          example: 120
-                        bikeCount:
-                          type: integer
-                          example: 8
-                        score:
-                          type: number
-                          example: 92
-                        reason:
-                          type: string
-                          example: "가까움 + 자전거 충분"
-                        mapUrl:
-                          type: string
-                          example: "https://ddareungi-app.vercel.app/?lat=37.498&lng=127.027"
+                $ref: "#/components/schemas/RecommendationResponse"
+
+  /recommendByPlace:
+    post:
+      operationId: getBikeRecommendationByPlace
+      summary: Get nearby bike station recommendations by place name
+      description: 장소명 또는 지명(예: 마곡역, 구디, 강남역)을 기반으로 가장 적합한 따릉이 대여소를 추천합니다.
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - place
+              properties:
+                place:
+                  type: string
+                  description: 검색할 장소명 또는 지역명
+                  example: "마곡역"
+
+      responses:
+        "200":
+          description: 장소 기반 추천 결과 반환
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - type: object
+                    properties:
+                      place:
+                        type: string
+                        example: "마곡역"
+                      address:
+                        type: string
+                        example: "서울 강서구 마곡동"
+                      lat:
+                        type: number
+                        example: 37.560183
+                      lng:
+                        type: number
+                        example: 126.825448
+                  - $ref: "#/components/schemas/RecommendationResponse"
+
+components:
+  schemas:
+    RecommendationResponse:
+      type: object
+      properties:
+        stations:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "1197. 엠펠리체 호텔 건너편"
+              lat:
+                type: number
+                example: 37.5602417
+              lng:
+                type: number
+                example: 126.8271637
+              distance:
+                type: number
+                example: 205
+              bikeCount:
+                type: integer
+                example: 63
+              score:
+                type: number
+                example: 127.4
+              reason:
+                type: string
+                example: "매우 가까움, 자전거 수가 충분히 많아 대여 가능성이 높음"
+              mapUrl:
+                type: string
+                example: "https://ddareungi-gpt-iod2.vercel.app/?lat=37.5602417&lng=126.8271637&name=1197.%20%EC%97%A0%ED%8E%A0%EB%A6%AC%EC%B2%B4%20%ED%98%B8%ED%85%94%20%EA%B1%B4%EB%84%88%ED%8E%B8"
