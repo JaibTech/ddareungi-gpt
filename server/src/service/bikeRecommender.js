@@ -1,5 +1,6 @@
 export function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
+
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
@@ -46,16 +47,26 @@ export function getScore(station, userLat, userLng) {
   };
 }
 
-export function recommendStations(data, userLat, userLng) {
+export function recommendStations(
+  data,
+  userLat,
+  userLng,
+  limit = 3
+) {
   return data
-    .map((station) => getScore(station, userLat, userLng))
+    .map((station) =>
+      getScore(station, userLat, userLng)
+    )
     .filter((station) => station.distance <= 1000)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 10);
+    .slice(0, limit);
 }
 
 export function makeExplanation(station) {
-  const walkMinute = Math.max(1, Math.round(station.distance / 80));
+  const walkMinute = Math.max(
+    1,
+    Math.round(station.distance / 80)
+  );
 
   return `
 📍 ${station.stationName}

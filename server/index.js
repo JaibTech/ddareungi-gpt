@@ -43,8 +43,13 @@ async function getBikeData() {
   }
 
   if (text.trim().startsWith("<")) {
-    console.error("SEOUL API HTML RESPONSE:", text.slice(0, 500));
-    throw new Error("Seoul API returned HTML instead of JSON");
+    console.error(
+      "SEOUL API HTML RESPONSE:",
+      text.slice(0, 500)
+    );
+    throw new Error(
+      "Seoul API returned HTML instead of JSON"
+    );
   }
 
   const data = JSON.parse(text);
@@ -90,12 +95,29 @@ async function buildRecommendations(lat, lng) {
     stationName: item.stationName,
     lat: parseFloat(item.stationLatitude),
     lon: parseFloat(item.stationLongitude),
-    parkingBikeTotCnt: parseInt(item.parkingBikeTotCnt, 10),
+    parkingBikeTotCnt: parseInt(
+      item.parkingBikeTotCnt,
+      10
+    ),
   }));
 
-  const results = recommendStations(stations, lat, lng);
+  // GPT 응답에는 기존처럼 1~3위만 표시
+  const topResults = recommendStations(
+    stations,
+    lat,
+    lng,
+    3
+  );
 
-  const response = results.map((station) => ({
+  // 전체 지도에는 1km 이내 최대 10개 표시
+  const mapResults = recommendStations(
+    stations,
+    lat,
+    lng,
+    10
+  );
+
+  const topResponse = topResults.map((station) => ({
     name: station.stationName,
     distance: station.distance,
     bikeCount: station.parkingBikeTotCnt,
@@ -108,10 +130,21 @@ async function buildRecommendations(lat, lng) {
     )}`,
   }));
 
-  const encodedStations = encodeURIComponent(JSON.stringify(response));
+  const mapResponse = mapResults.map((station) => ({
+    name: station.stationName,
+    distance: station.distance,
+    bikeCount: station.parkingBikeTotCnt,
+    score: station.score,
+    lat: station.lat,
+    lng: station.lon,
+  }));
+
+  const encodedStations = encodeURIComponent(
+    JSON.stringify(mapResponse)
+  );
 
   return {
-    stations: response,
+    stations: topResponse,
     allMapUrl: `${CLIENT_URL}/?stations=${encodedStations}`,
   };
 }
@@ -126,7 +159,10 @@ app.post("/recommend", async (req, res) => {
       });
     }
 
-    const result = await buildRecommendations(Number(lat), Number(lng));
+    const result = await buildRecommendations(
+      Number(lat),
+      Number(lng)
+    );
 
     return res.json(result);
   } catch (err) {
@@ -151,7 +187,10 @@ app.post("/recommendByPlace", async (req, res) => {
 
     const location = await searchPlace(place);
 
-    const result = await buildRecommendations(location.lat, location.lng);
+    const result = await buildRecommendations(
+      location.lat,
+      location.lng
+    );
 
     return res.json({
       place: location.placeName,
