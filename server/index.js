@@ -95,7 +95,7 @@ async function buildRecommendations(lat, lng) {
 
   const results = recommendStations(stations, lat, lng);
 
-  return results.map((station) => ({
+  const response = results.map((station) => ({
     name: station.stationName,
     distance: station.distance,
     bikeCount: station.parkingBikeTotCnt,
@@ -107,6 +107,13 @@ async function buildRecommendations(lat, lng) {
       station.stationName
     )}`,
   }));
+
+  const encodedStations = encodeURIComponent(JSON.stringify(response));
+
+  return {
+    stations: response,
+    allMapUrl: `${CLIENT_URL}/?stations=${encodedStations}`,
+  };
 }
 
 app.post("/recommend", async (req, res) => {
@@ -119,11 +126,9 @@ app.post("/recommend", async (req, res) => {
       });
     }
 
-    const response = await buildRecommendations(Number(lat), Number(lng));
+    const result = await buildRecommendations(Number(lat), Number(lng));
 
-    return res.json({
-      stations: response,
-    });
+    return res.json(result);
   } catch (err) {
     console.error("RECOMMEND ERROR:", err);
 
@@ -146,17 +151,14 @@ app.post("/recommendByPlace", async (req, res) => {
 
     const location = await searchPlace(place);
 
-    const response = await buildRecommendations(
-      location.lat,
-      location.lng
-    );
+    const result = await buildRecommendations(location.lat, location.lng);
 
     return res.json({
       place: location.placeName,
       address: location.address,
       lat: location.lat,
       lng: location.lng,
-      stations: response,
+      ...result,
     });
   } catch (err) {
     console.error("RECOMMEND BY PLACE ERROR:", err);
