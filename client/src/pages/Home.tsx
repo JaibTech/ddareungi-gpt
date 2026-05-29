@@ -15,6 +15,39 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
+    const stationsParam = params.get("stations");
+
+    if (stationsParam) {
+      try {
+        const parsedStations = JSON.parse(
+          decodeURIComponent(stationsParam)
+        );
+
+        setStations(parsedStations);
+
+        if (parsedStations.length > 0) {
+          const first = parsedStations[0];
+
+          setUserLocation({
+            lat: first.lat,
+            lng: first.lng,
+          });
+
+          setSelectedStation({
+            name: first.name,
+            lat: first.lat,
+            lon: first.lng,
+            bikeCount: first.bikeCount,
+            distance: first.distance,
+          });
+        }
+
+        return;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     const lat = params.get("lat");
     const lng = params.get("lng");
     const name = params.get("name") || "선택한 따릉이";
@@ -63,6 +96,8 @@ export default function Home() {
 
   async function load() {
     if (!userLocation) return;
+
+    if (stations.length > 0) return;
 
     const res = await getRecommendations(
       userLocation.lat,
