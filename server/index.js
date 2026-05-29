@@ -80,7 +80,7 @@ app.post("/recommend", async (req, res) => {
       reason: makeExplanation(station),
       lat: station.lat,
       lng: station.lon,
-      mapUrl: `https://ddareungi-app.vercel.app/map?lat=${station.lat}&lng=${station.lon}`,
+      mapUrl: `https://ddareungi-gpt-iod2.vercel.app/map?lat=${station.lat}&lng=${station.lon}`,
     }));
 
     return res.json({

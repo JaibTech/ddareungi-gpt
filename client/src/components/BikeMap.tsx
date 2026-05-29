@@ -17,30 +17,22 @@ export default function BikeMap({
   selectedStation,
 }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
-
   const mapInstance = useRef<any>(null);
-
   const userMarker = useRef<any>(null);
 
   useEffect(() => {
-    if (!mapRef.current || !window.kakao) return;
+    if (!mapRef.current || !window.kakao?.maps) return;
 
-    // 🗺️ 지도 생성
-    const map = new window.kakao.maps.Map(
-      mapRef.current,
-      {
-        center: new window.kakao.maps.LatLng(
-          userLocation?.lat || 37.5665,
-          userLocation?.lng || 126.978
-        ),
-
-        level: 4,
-      }
-    );
+    const map = new window.kakao.maps.Map(mapRef.current, {
+      center: new window.kakao.maps.LatLng(
+        userLocation?.lat || 37.5665,
+        userLocation?.lng || 126.978
+      ),
+      level: 4,
+    });
 
     mapInstance.current = map;
 
-    // 👤 내 위치 마커
     if (userLocation) {
       const pos = new window.kakao.maps.LatLng(
         userLocation.lat,
@@ -55,14 +47,12 @@ export default function BikeMap({
       userMarker.current = marker;
     }
 
-    // 🚲 따릉이 마커
     stations.forEach((station) => {
       const position = new window.kakao.maps.LatLng(
         station.lat,
-        station.lon
+        station.lon ?? station.lng
       );
 
-      // 🚦 혼잡도 색상
       const color =
         station.bikeCount >= 10
           ? "green"
@@ -70,7 +60,6 @@ export default function BikeMap({
           ? "yellow"
           : "red";
 
-      // 🎨 마커 이미지
       const imageSrc =
         color === "green"
           ? "https://maps.google.com/mapfiles/ms/icons/green-dot.png"
@@ -78,83 +67,96 @@ export default function BikeMap({
           ? "https://maps.google.com/mapfiles/ms/icons/yellow-dot.png"
           : "https://maps.google.com/mapfiles/ms/icons/red-dot.png";
 
-      const imageSize =
-        new window.kakao.maps.Size(32, 32);
+      const markerImage = new window.kakao.maps.MarkerImage(
+        imageSrc,
+        new window.kakao.maps.Size(32, 32)
+      );
 
-      const markerImage =
-        new window.kakao.maps.MarkerImage(
-          imageSrc,
-          imageSize
-        );
-
-      // 📍 마커 생성
       const marker = new window.kakao.maps.Marker({
         map,
         position,
         image: markerImage,
       });
 
-      // ℹ️ 정보창
+      const stationLng = station.lon ?? station.lng;
+
       const info = new window.kakao.maps.InfoWindow({
         content: `
-          <div style="padding:6px;font-size:12px;">
+          <div style="padding:10px;font-size:13px;min-width:170px;">
             <strong>${station.name}</strong><br/>
-            🚲 ${station.bikeCount}대<br/>
-            📍 ${station.distance}m
+            🚲 ${station.bikeCount ?? 0}대<br/>
+            📍 ${station.distance ?? 0}m<br/>
+            <a
+              href="https://map.kakao.com/link/to/${encodeURIComponent(
+                station.name
+              )},${station.lat},${stationLng}"
+              target="_blank"
+              style="display:inline-block;margin-top:8px;color:#2563eb;font-weight:bold;text-decoration:none;"
+            >
+              길찾기
+            </a>
           </div>
         `,
       });
 
-      // 🖱️ 마커 클릭
-      window.kakao.maps.event.addListener(
-        marker,
-        "click",
-        () => {
-          info.open(map, marker);
-        }
-      );
+      window.kakao.maps.event.addListener(marker, "click", () => {
+        info.open(map, marker);
+      });
     });
   }, [stations, userLocation]);
 
-  // 👤 내 위치 이동 시 지도 중심 이동
   useEffect(() => {
-    if (!mapInstance.current || !userLocation)
-      return;
+    if (!mapInstance.current || !userLocation) return;
 
-    const moveLatLng =
-      new window.kakao.maps.LatLng(
-        userLocation.lat,
-        userLocation.lng
-      );
+    const moveLatLng = new window.kakao.maps.LatLng(
+      userLocation.lat,
+      userLocation.lng
+    );
 
-    // 지도 중심 이동
     mapInstance.current.setCenter(moveLatLng);
 
-    // 내 위치 마커 이동
     if (userMarker.current) {
       userMarker.current.setPosition(moveLatLng);
     }
   }, [userLocation]);
 
-  // 🚀 카드 클릭 시 해당 따릉이로 이동
   useEffect(() => {
-    if (
-      !selectedStation ||
-      !mapInstance.current
-    )
-      return;
+    if (!selectedStation || !mapInstance.current) return;
 
-    const moveLatLng =
-      new window.kakao.maps.LatLng(
-        selectedStation.lat,
-        selectedStation.lon
-      );
+    const stationLng =
+      selectedStation.lon ?? selectedStation.lng;
 
-    // 📍 부드럽게 이동
+    const moveLatLng = new window.kakao.maps.LatLng(
+      selectedStation.lat,
+      stationLng
+    );
+
+    const marker = new window.kakao.maps.Marker({
+      map: mapInstance.current,
+      position: moveLatLng,
+    });
+
+    const info = new window.kakao.maps.InfoWindow({
+      content: `
+        <div style="padding:10px;font-size:13px;min-width:170px;">
+          <strong>${selectedStation.name}</strong><br/>
+          📍 선택한 대여소<br/>
+          <a
+            href="https://map.kakao.com/link/to/${encodeURIComponent(
+              selectedStation.name
+            )},${selectedStation.lat},${stationLng}"
+            target="_blank"
+            style="display:inline-block;margin-top:8px;color:#2563eb;font-weight:bold;text-decoration:none;"
+          >
+            길찾기
+          </a>
+        </div>
+      `,
+    });
+
     mapInstance.current.panTo(moveLatLng);
-
-    // 🔍 확대
     mapInstance.current.setLevel(3);
+    info.open(mapInstance.current, marker);
   }, [selectedStation]);
 
   return (

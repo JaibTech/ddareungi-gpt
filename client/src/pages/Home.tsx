@@ -4,6 +4,7 @@ import { getRecommendations } from "../api/bikeApi";
 
 export default function Home() {
   const [stations, setStations] = useState<any[]>([]);
+
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
@@ -16,8 +17,8 @@ export default function Home() {
 
     const lat = params.get("lat");
     const lng = params.get("lng");
+    const name = params.get("name") || "선택한 따릉이";
 
-    // 지도 링크로 들어온 경우: GPS 실행하지 않음
     if (lat && lng) {
       const targetLat = Number(lat);
       const targetLng = Number(lng);
@@ -28,7 +29,7 @@ export default function Home() {
       });
 
       setSelectedStation({
-        name: "선택한 따릉이",
+        name,
         lat: targetLat,
         lon: targetLng,
         bikeCount: 0,
@@ -38,7 +39,6 @@ export default function Home() {
       return;
     }
 
-    // 일반 접속일 때만 GPS 실행
     if (!navigator.geolocation) return;
 
     const watchId = navigator.geolocation.watchPosition(
