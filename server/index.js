@@ -92,7 +92,7 @@ async function buildRecommendations(lat, lng) {
     parkingBikeTotCnt: parseInt(item.parkingBikeTotCnt, 10),
   }));
 
-  const topResults = recommendStations(stations, lat, lng, 3);
+  const topResults = recommendStations(stations, lat, lng, 5);
   const mapResults = recommendStations(stations, lat, lng, 5);
 
   const topResponse = topResults.map((station) => ({
