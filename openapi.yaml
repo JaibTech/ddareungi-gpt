@@ -60,9 +60,6 @@ paths:
                           type: string
                         mapUrl:
                           type: string
-                  allMapUrl:
-                    type: string
-                    description: 추천 대여소 전체를 지도에 표시하는 링크
 
   /recommendByPlace:
     post:
@@ -119,6 +116,3 @@ paths:
                           type: string
                         mapUrl:
                           type: string
-                  allMapUrl:
-                    type: string
-                    description: 추천 대여소 전체를 지도에 표시하는 링크
