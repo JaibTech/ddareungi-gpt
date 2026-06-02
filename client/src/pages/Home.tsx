@@ -19,9 +19,7 @@ export default function Home() {
 
     if (stationsParam) {
       try {
-        const parsedStations = JSON.parse(
-          decodeURIComponent(stationsParam)
-        );
+        const parsedStations = JSON.parse(decodeURIComponent(stationsParam));
 
         setStations(parsedStations);
 
@@ -94,24 +92,24 @@ export default function Home() {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
-  async function load() {
-    if (!userLocation) return;
-
-    if (stations.length > 0) return;
-
-    const res = await getRecommendations(
-      userLocation.lat,
-      userLocation.lng,
-      []
-    );
-
-    setStations(res.stations ?? res);
-  }
-
   useEffect(() => {
-    if (userLocation) {
-      load();
+    async function load() {
+      if (!userLocation) return;
+
+      try {
+        const res = await getRecommendations(
+          userLocation.lat,
+          userLocation.lng,
+          []
+        );
+
+        setStations(res.stations ?? res);
+      } catch (err) {
+        console.error("추천 조회 실패:", err);
+      }
     }
+
+    load();
   }, [userLocation]);
 
   return (

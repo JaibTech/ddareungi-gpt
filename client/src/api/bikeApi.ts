@@ -1,22 +1,21 @@
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+
 export async function getRecommendations(
   userLat: number,
   userLng: number,
-  stations: any[]
+  stations: any[] = []
 ) {
-  const res = await fetch(
-    "http://localhost:3000/recommend",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userLat,
-        userLng,
-        stations,
-      }),
-    }
-  );
+  const res = await fetch(`${API_BASE_URL}/recommend`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      lat: userLat,
+      lng: userLng,
+    }),
+  });
 
   if (!res.ok) {
     throw new Error("API Error");
