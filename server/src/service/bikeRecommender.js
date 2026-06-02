@@ -17,28 +17,23 @@ export function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 export function getScore(station, userLat, userLng) {
-  const distance = getDistance(
-    userLat,
-    userLng,
-    station.lat,
-    station.lon
-  );
-
-  const bikeCount = station.parkingBikeTotCnt;
+  const distance = getDistance(userLat, userLng, station.lat, station.lon);
+  const bikeCount = station.parkingBikeTotCnt || 0;
 
   let score = 0;
 
   if (distance <= 200) score += 100;
   else if (distance <= 500) score += 80;
   else if (distance <= 1000) score += 50;
-  else score -= 100;
+  else if (distance <= 2000) score += 20;
+  else score += 0;
 
-  if (bikeCount >= 10) score += 20;
-  else if (bikeCount >= 5) score += 12;
-  else if (bikeCount > 0) score += 5;
-  else score -= 100;
+  if (bikeCount >= 10) score += 30;
+  else if (bikeCount >= 5) score += 20;
+  else if (bikeCount > 0) score += 10;
+  else score -= 50;
 
-  score -= distance / 30;
+  score -= distance / 100;
 
   return {
     ...station,
@@ -50,16 +45,17 @@ export function getScore(station, userLat, userLng) {
 export function recommendStations(data, userLat, userLng, limit = 3) {
   return data
     .map((station) => getScore(station, userLat, userLng))
-    .filter((station) => station.distance <= 2000)
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => {
+      if (a.parkingBikeTotCnt > 0 && b.parkingBikeTotCnt === 0) return -1;
+      if (a.parkingBikeTotCnt === 0 && b.parkingBikeTotCnt > 0) return 1;
+
+      return a.distance - b.distance;
+    })
     .slice(0, limit);
 }
 
 export function makeExplanation(station) {
-  const walkMinute = Math.max(
-    1,
-    Math.round(station.distance / 80)
-  );
+  const walkMinute = Math.max(1, Math.round(station.distance / 80));
 
   return `
 📍 ${station.stationName}
@@ -69,11 +65,11 @@ export function makeExplanation(station) {
 🚶 도보: 약 ${walkMinute}분
 
 👍 추천 이유:
-- ${station.distance < 300 ? "매우 가까움" : "1km 이내 접근 가능"}
+- 현재 위치에서 가까운 대여소입니다.
 - ${
-    station.parkingBikeTotCnt >= 10
-      ? "자전거 수가 충분히 많아 대여 가능성이 높음"
-      : "현재 이용 가능한 자전거가 있음"
+    station.parkingBikeTotCnt > 0
+      ? "현재 이용 가능한 자전거가 있습니다."
+      : "현재 자전거가 없을 수 있어 다른 대여소도 함께 확인하세요."
   }
   `.trim();
 }
