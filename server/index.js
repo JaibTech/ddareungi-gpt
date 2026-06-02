@@ -32,24 +32,45 @@ async function getBikeData() {
     throw new Error("SEOUL_BIKE_API_KEY is missing");
   }
 
-  const url = `http://openapi.seoul.go.kr:8088/${SEOUL_API_KEY}/json/bikeList/1/1000/`;
+  const pageSize = 1000;
+  let start = 1;
+  let allRows = [];
+  let totalCount = null;
 
-  const res = await fetch(url);
-  const text = await res.text();
+  while (true) {
+    const end = start + pageSize - 1;
 
-  if (!res.ok) {
-    console.error("SEOUL API HTTP ERROR:", text);
-    throw new Error(`Seoul API HTTP error: ${res.status}`);
+    const url = `http://openapi.seoul.go.kr:8088/${SEOUL_API_KEY}/json/bikeList/${start}/${end}/`;
+
+    const res = await fetch(url);
+    const text = await res.text();
+
+    if (!res.ok) {
+      console.error("SEOUL API HTTP ERROR:", text);
+      throw new Error(`Seoul API HTTP error: ${res.status}`);
+    }
+
+    if (text.trim().startsWith("<")) {
+      console.error("SEOUL API HTML RESPONSE:", text.slice(0, 500));
+      throw new Error("Seoul API returned HTML instead of JSON");
+    }
+
+    const data = JSON.parse(text);
+
+    const rows = data?.rentBikeStatus?.row || [];
+    totalCount = data?.rentBikeStatus?.list_total_count || totalCount;
+
+    allRows.push(...rows);
+
+    if (rows.length < pageSize) break;
+    if (totalCount && allRows.length >= totalCount) break;
+
+    start += pageSize;
   }
 
-  if (text.trim().startsWith("<")) {
-    console.error("SEOUL API HTML RESPONSE:", text.slice(0, 500));
-    throw new Error("Seoul API returned HTML instead of JSON");
-  }
+  console.log("따릉이 전체 로드 수:", allRows.length);
 
-  const data = JSON.parse(text);
-
-  return data?.rentBikeStatus?.row || [];
+  return allRows;
 }
 
 async function searchPlace(place) {
@@ -93,12 +114,22 @@ async function searchPlace(place) {
 async function buildRecommendations(lat, lng) {
   const rawData = await getBikeData();
 
-  const stations = rawData.map((item) => ({
-    stationName: item.stationName,
-    lat: parseFloat(item.stationLatitude),
-    lon: parseFloat(item.stationLongitude),
-    parkingBikeTotCnt: parseInt(item.parkingBikeTotCnt, 10),
-  }));
+  console.log("rawData count:", rawData.length);
+
+  const stations = rawData
+    .map((item) => ({
+      stationName: item.stationName,
+      lat: parseFloat(item.stationLatitude),
+      lon: parseFloat(item.stationLongitude),
+      parkingBikeTotCnt: parseInt(item.parkingBikeTotCnt, 10),
+    }))
+    .filter(
+      (station) =>
+        station.stationName &&
+        !Number.isNaN(station.lat) &&
+        !Number.isNaN(station.lon) &&
+        !Number.isNaN(station.parkingBikeTotCnt)
+    );
 
   const results = recommendStations(stations, lat, lng, 3);
 
