@@ -50,7 +50,7 @@ export function getScore(station, userLat, userLng) {
 export function recommendStations(data, userLat, userLng, limit = 3) {
   return data
     .map((station) => getScore(station, userLat, userLng))
-    .filter((station) => station.distance <= 1000)
+    .filter((station) => station.distance <= 2000)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 }
