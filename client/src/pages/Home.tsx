@@ -5,25 +5,30 @@ import { getRecommendations } from "../api/bikeApi";
 export default function Home() {
   const [stations, setStations] = useState<any[]>([]);
 
-
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
 
-  const [selectedStation, setSelectedStation] = useState<any>(null);
+  const [selectedStation, setSelectedStation] =
+    useState<any>(null);
+
+  const [fromLink, setFromLink] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    
-    const bikeCount = params.get("bikeCount");
-    const distance = params.get("distance");
+    const params = new URLSearchParams(
+      window.location.search
+    );
 
     const stationsParam = params.get("stations");
 
     if (stationsParam) {
       try {
-        const parsedStations = JSON.parse(decodeURIComponent(stationsParam));
+        setFromLink(true);
+
+        const parsedStations = JSON.parse(
+          decodeURIComponent(stationsParam)
+        );
 
         setStations(parsedStations);
 
@@ -39,8 +44,8 @@ export default function Home() {
             name: first.name,
             lat: first.lat,
             lon: first.lng,
-            bikeCount: first.bikeCount,
-            distance: first.distance,
+            bikeCount: first.bikeCount ?? 0,
+            distance: first.distance ?? 0,
           });
         }
 
@@ -52,9 +57,14 @@ export default function Home() {
 
     const lat = params.get("lat");
     const lng = params.get("lng");
-    const name = params.get("name") || "선택한 따릉이";
+    const name =
+      params.get("name") || "선택한 따릉이";
+    const bikeCount = params.get("bikeCount");
+    const distance = params.get("distance");
 
     if (lat && lng) {
+      setFromLink(true);
+
       const targetLat = Number(lat);
       const targetLng = Number(lng);
 
@@ -93,12 +103,14 @@ export default function Home() {
       }
     );
 
-    return () => navigator.geolocation.clearWatch(watchId);
+    return () =>
+      navigator.geolocation.clearWatch(watchId);
   }, []);
 
   useEffect(() => {
     async function load() {
       if (!userLocation) return;
+      if (fromLink) return;
 
       try {
         const res = await getRecommendations(
@@ -114,7 +126,7 @@ export default function Home() {
     }
 
     load();
-  }, [userLocation]);
+  }, [userLocation, fromLink]);
 
   return (
     <div>
