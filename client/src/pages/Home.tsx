@@ -5,6 +5,7 @@ import { getRecommendations } from "../api/bikeApi";
 export default function Home() {
   const [stations, setStations] = useState<any[]>([]);
 
+
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
@@ -14,7 +15,7 @@ export default function Home() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-
+    
     const bikeCount = params.get("bikeCount");
     const distance = params.get("distance");
 
@@ -38,8 +39,8 @@ export default function Home() {
             name: first.name,
             lat: first.lat,
             lon: first.lng,
-            bikeCount: bikeCount ? Number(bikeCount) : 0,
-            distance: distance ? Number(distance) : 0,
+            bikeCount: first.bikeCount,
+            distance: first.distance,
           });
         }
 
@@ -66,8 +67,8 @@ export default function Home() {
         name,
         lat: targetLat,
         lon: targetLng,
-        bikeCount: 0,
-        distance: 0,
+        bikeCount: bikeCount ? Number(bikeCount) : 0,
+        distance: distance ? Number(distance) : 0,
       });
 
       return;
