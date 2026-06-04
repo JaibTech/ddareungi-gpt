@@ -115,8 +115,7 @@ export default function Home() {
       try {
         const res = await getRecommendations(
           userLocation.lat,
-          userLocation.lng,
-          []
+          userLocation.lng
         );
 
         setStations(res.stations ?? res);

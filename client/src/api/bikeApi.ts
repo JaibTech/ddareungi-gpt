@@ -4,7 +4,6 @@ const API_BASE_URL =
 export async function getRecommendations(
   userLat: number,
   userLng: number,
-  stations: any[] = []
 ) {
   const res = await fetch(`${API_BASE_URL}/recommend`, {
     method: "POST",
