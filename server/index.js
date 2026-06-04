@@ -189,7 +189,7 @@ async function buildRecommendations(lat, lng) {
     lng: station.lon,
     mapUrl: `${CLIENT_URL}/?lat=${station.lat}&lng=${station.lon}&name=${encodeURIComponent(
       station.stationName
-    )}`,
+    )}&bikeCount=${station.parkingBikeTotCnt}&distance=${station.distance}`,
   }));
 
   return {

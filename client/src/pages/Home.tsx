@@ -15,6 +15,9 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
 
+    const bikeCount = params.get("bikeCount");
+    const distance = params.get("distance");
+
     const stationsParam = params.get("stations");
 
     if (stationsParam) {
@@ -35,8 +38,8 @@ export default function Home() {
             name: first.name,
             lat: first.lat,
             lon: first.lng,
-            bikeCount: first.bikeCount,
-            distance: first.distance,
+            bikeCount: bikeCount ? Number(bikeCount) : 0,
+            distance: distance ? Number(distance) : 0,
           });
         }
 
